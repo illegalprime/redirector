@@ -14,7 +14,7 @@ fn main() {
 
     let redirect = env::var("REDIRECT_URL").unwrap_or_else(|_| DEFAULT_REDIRECT.to_string());
 
-    let header = format!("HTTP/1.1 308 Permanent Redirect\r\nLocation: {}\r\n\r\n", redirect);
+    let header = format!("HTTP/1.1 307 Temporary Redirect\r\nLocation: {}\r\n\r\n", redirect);
     let header = header.as_bytes();
 
     let listener = TcpListener::bind((LISTENING_ADDRESS, port)).expect("Failed to bind to address! Are you trying to listen to ports <= 1024 without root access?");
