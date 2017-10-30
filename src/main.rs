@@ -10,11 +10,12 @@ fn main() {
         Ok(value) => value.parse().unwrap_or(DEFAULT_PORT),
         Err(_) => DEFAULT_PORT
     };
-    let redirect = match env::var("REDIRECT_URL") {
+    let redirect: String = match env::var("REDIRECT_URL") {
         Ok(value) => value,
         Err(_) => DEFAULT_REDIRECT.to_string()
     };
 
+    let header = format!("HTTP/1.1 308 Permanent Redirect\r\nLocation: {}\r\n\r\n", redirect);
     let mut socket_address: SocketAddr = "0.0.0.0:3000".parse().unwrap();
     socket_address.set_port(port);
     println!("Redirector redirecting to {} listening on {}", redirect, socket_address);
@@ -22,9 +23,7 @@ fn main() {
     let listener = TcpListener::bind(socket_address).unwrap();
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-        let _ = stream.write(
-            format!("HTTP/1.1 308 Permanent Redirect\r\nLocation: {}\r\n\r\n", redirect).as_bytes()
-        );
+        let _ = stream.write(header.as_bytes());
         let _ = stream.flush();
     }
 }
