@@ -1,29 +1,28 @@
 use std::env;
 use std::io::Write;
-use std::net::{SocketAddr, TcpListener};
+use std::net::TcpListener;
+
+const DEFAULT_PORT: u16 = 3000;
+const DEFAULT_REDIRECT: &str = "https://hack.gt";
+const LISTENING_ADDRESS: &str = "0.0.0.0";
 
 fn main() {
-    const DEFAULT_PORT: u16 = 3000;
-    const DEFAULT_REDIRECT: &str = "https://hack.gt";
+    let port = match env::var("PORT") {
+        Ok(p) => p.parse().unwrap_or(DEFAULT_PORT),
+        Err(_) => DEFAULT_PORT,
+    };
 
-    let port: u16 = match env::var("PORT") {
-        Ok(value) => value.parse().unwrap_or(DEFAULT_PORT),
-        Err(_) => DEFAULT_PORT
-    };
-    let redirect: String = match env::var("REDIRECT_URL") {
-        Ok(value) => value,
-        Err(_) => DEFAULT_REDIRECT.to_string()
-    };
+    let redirect = env::var("REDIRECT_URL").unwrap_or_else(|_| DEFAULT_REDIRECT.to_string());
 
     let header = format!("HTTP/1.1 308 Permanent Redirect\r\nLocation: {}\r\n\r\n", redirect);
-    let mut socket_address: SocketAddr = "0.0.0.0:3000".parse().unwrap();
-    socket_address.set_port(port);
-    println!("Redirector redirecting to {} listening on {}", redirect, socket_address);
+    let header = header.as_bytes();
 
-    let listener = TcpListener::bind(socket_address).unwrap();
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        let _ = stream.write(header.as_bytes());
-        let _ = stream.flush();
+    let listener = TcpListener::bind((LISTENING_ADDRESS, port)).expect("Failed to bind to address! Are you trying to listen to ports <= 1024 without root access?");
+
+    println!("Redirector redirecting to {} listening on {}:{}", redirect, LISTENING_ADDRESS, port);
+
+    for mut stream in listener.incoming().filter_map(Result::ok) {
+        stream.write(header).ok();
+        stream.flush().ok();
     }
 }
