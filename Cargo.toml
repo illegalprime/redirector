@@ -1,0 +1,6 @@
+[package]
+name = "redirect-app2"
+version = "0.1.0"
+authors = ["Ryan Petschek <petschekr@gmail.com>"]
+
+[dependencies]
